@@ -1,0 +1,11 @@
+.content {
+  --bg: var(--rs-color-background-page);
+	--dot-color: var(--rs-color-background-neutral-faded);
+
+  overflow: auto;
+	background:
+		linear-gradient(90deg, var(--bg) 10px, transparent 1%) center,
+		linear-gradient(var(--bg) 10px, transparent 1%) center,
+		var(--dot-color);
+  background-size: 12px 12px;
+}
