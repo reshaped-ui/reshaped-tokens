@@ -1,9 +1,8 @@
 import React from "react";
-import { TextField, View, Text, Button } from "reshaped";
+import { TextField, View, Text, Button, Divider, Badge } from "reshaped";
 import type { TextFieldProps } from "reshaped";
 import { subscribeToCanvas, receiveCanvasMessage } from "utilities/channel";
 import ColorPicker, { ColorPickerProps } from "components/ColorPicker";
-import ColorModeSync, { ColorModeSyncProps } from "components/ColorModeSync";
 import Layout from "components/Layout";
 import * as ThemeService from "services/theme";
 import * as FigmaService from "services/figma";
@@ -22,11 +21,9 @@ const EditRoute = (props: Props) => {
 		theme?.thumbnailColor || ColorPicker.colors[0]
 	);
 	const [themeName, setThemeName] = React.useState(theme?.name || "");
-	const [lightMode, setLightMode] = React.useState<G.ColorModeData | null>(
-		theme?.lightMode || null
-	);
-	const [darkMode, setDarkMode] = React.useState<G.ColorModeData | null>(theme?.darkMode || null);
+	const [themeData, setThemeData] = React.useState<G.Theme["data"] | null>(theme?.data || null);
 	const nameFieldRef = React.useRef<HTMLInputElement | null>(null);
+	const resolvedThemeName = themeName || themeData?.file.name;
 
 	const handleColorChange: ColorPickerProps["onChange"] = ({ value }) => {
 		setThumbnailColor(value);
@@ -36,28 +33,15 @@ const EditRoute = (props: Props) => {
 		setThemeName(value);
 	};
 
-	const handleColorModeSync: ColorModeSyncProps["onSync"] = (colorMode) => {
-		ThemeService.plugin.requestStyles({ colorMode });
-	};
-
-	const handleColorModeClear: ColorModeSyncProps["onClear"] = (colorMode) => {
-		if (colorMode === "dark") {
-			setDarkMode(null);
-			FigmaService.plugin.notify({ message: "🗑️ Dark mode is removed" });
-		}
-
-		if (colorMode === "light") {
-			setLightMode(null);
-			FigmaService.plugin.notify({ message: "🗑️ Light mode is removed" });
-		}
+	const handleThemeSync = () => {
+		ThemeService.plugin.requestStyles();
 	};
 
 	const handleSubmit = () => {
 		onSubmit({
 			name: themeName,
 			thumbnailColor,
-			lightMode,
-			darkMode,
+			data: themeData,
 		});
 		onNavigateBack();
 	};
@@ -78,16 +62,9 @@ const EditRoute = (props: Props) => {
 			receiveCanvasMessage(
 				msg,
 				ThemeService.CanvasActionType.importStyles,
-				({ colorMode, styles, fileName, fileKey }) => {
-					if (colorMode === "dark") {
-						setDarkMode({ file: { name: fileName, key: fileKey }, styles });
-						FigmaService.plugin.notify({ message: "🌙 Dark mode is synced" });
-					}
-
-					if (colorMode === "light") {
-						setLightMode({ file: { name: fileName, key: fileKey }, styles });
-						FigmaService.plugin.notify({ message: "🔆 Light mode is synced" });
-					}
+				({ styles, variables, fileName, fileKey }) => {
+					setThemeData({ file: { name: fileName, key: fileKey }, styles, variables });
+					FigmaService.plugin.notify({ message: "✨ Theme is synced" });
 				}
 			);
 		});
@@ -104,7 +81,7 @@ const EditRoute = (props: Props) => {
 			action={{
 				text: "Save",
 				onClick: handleSubmit,
-				disabled: !themeName || !thumbnailColor,
+				disabled: !resolvedThemeName || !thumbnailColor,
 			}}
 			secondaryActionSlot={
 				!!theme && (
@@ -122,29 +99,46 @@ const EditRoute = (props: Props) => {
 					<TextField
 						placeholder="Theme name"
 						name="name"
-						value={themeName}
+						value={resolvedThemeName}
 						onChange={handleNameChange}
 						inputAttributes={{ ref: nameFieldRef }}
+						endSlot={
+							<Button size="small" onClick={handleThemeSync}>
+								{themeData ? "Re-sync" : "Sync"}
+							</Button>
+						}
 					/>
 				</View.Item>
-				<ColorModeSync
-					mode="light"
-					onSync={handleColorModeSync}
-					onClear={handleColorModeClear}
-					syncedFile={lightMode?.file}
-				/>
-				<ColorModeSync
-					mode="dark"
-					onSync={handleColorModeSync}
-					onClear={handleColorModeClear}
-					syncedFile={darkMode?.file}
-				/>
 				<Text color="neutral-faded" variant="body-2">
-					<span role="img" aria-label="Notice">
-						☝
-					</span>{" "}
 					Open a published Figma library with a theme and mode you want to sync
 				</Text>
+				{themeData && (
+					<>
+						<Divider />
+						<div>Source file: {themeData.file.name}</div>
+						{(["styles", "variables"] as const).map((type) => {
+							const tokens = themeData[type];
+
+							return Object.entries(tokens).map(([tokenType, tokenGroup]) => {
+								const title = `${tokenType} ${type}`;
+
+								return (
+									<>
+										<Text variant="body-2" color="neutral-faded">
+											{title.charAt(0).toUpperCase()}
+											{title.slice(1)}
+										</Text>
+										<View direction="row" gap={1}>
+											{Object.keys(tokenGroup).map((tokenName) => (
+												<Badge variant="faded">{tokenName}</Badge>
+											))}
+										</View>
+									</>
+								);
+							});
+						})}
+					</>
+				)}
 			</View>
 		</Layout>
 	);

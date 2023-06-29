@@ -23,6 +23,26 @@ const importStyleByKey = async (key: string) => {
 	return style;
 };
 
+const variablesCache: Record<string, Promise<Variable> | Variable> = {};
+const importVariableByKey = async (key: string) => {
+	// Already being loaded, get style from the same promise instead of creating a new one
+	if (variablesCache[key] && "then" in variablesCache[key]) {
+		const variable = await variablesCache[key];
+		return variable;
+	}
+
+	// Already exists in cache
+	if (variablesCache[key]) {
+		return variablesCache[key];
+	}
+
+	variablesCache[key] = figma.variables.importVariableByKeyAsync(key);
+	const variable = await variablesCache[key];
+	variablesCache[key] = variable;
+
+	return variable;
+};
+
 const getTokens = async <Type extends "color" | "shadow" | "font">(
 	type: Type,
 	styles: BaseStyle[]
@@ -33,7 +53,26 @@ const getTokens = async <Type extends "color" | "shadow" | "font">(
 		const status = await style.getPublishStatusAsync();
 
 		if (status === "UNPUBLISHED") return;
-		result[style.name] = { styleName: style.name, type, styleKey: style.key };
+		result[style.name] = { styleName: style.name, type, styleKey: style.key, id: style.id };
+	});
+
+	await Promise.all(asyncQueue);
+	return result;
+};
+
+const getVariables = async <Type extends "color" | "number">(type: Type, variables: Variable[]) => {
+	const result: Record<string, G.BaseVariable<Type>> = {};
+
+	const asyncQueue = variables.map(async (variable) => {
+		// const status = await variable.getPublishStatusAsync();
+
+		// if (status === "UNPUBLISHED") return;
+		result[variable.name] = {
+			variableName: variable.name,
+			type,
+			variableKey: variable.key,
+			id: variable.id,
+		};
 	});
 
 	await Promise.all(asyncQueue);
@@ -43,6 +82,7 @@ const getTokens = async <Type extends "color" | "shadow" | "font">(
 export const getColorTokens = async () => {
 	const styles = figma.getLocalPaintStyles().filter((style) => style.paints.length === 1);
 	const tokens = await getTokens("color", styles);
+
 	return tokens;
 };
 
@@ -56,6 +96,13 @@ export const getFontTokens = async () => {
 	const styles = figma.getLocalTextStyles();
 	const tokens = await getTokens("font", styles);
 	return tokens;
+};
+
+export const getNumberVariables = async () => {
+	const localVariables = figma.variables.getLocalVariables("FLOAT");
+	const variables = await getVariables("number", localVariables);
+
+	return variables;
 };
 
 export const applyStylesToNode = async (
@@ -81,51 +128,55 @@ export const applyStylesToNode = async (
 	});
 };
 
+export const applyVariablesToNode = async (
+	node: any,
+	variables: G.ThemeVariables["number"],
+	properties: Array<VariableBindableNodeField>
+) => {
+	properties.forEach(async (variableProperty) => {
+		const variableId = node.boundVariables[variableProperty].id;
+		const variable = figma.variables.getVariableById(variableId);
+		const nextKey = variable && variables[variable.name]?.variableKey;
+
+		if (nextKey) {
+			const nextVariable = await importVariableByKey(nextKey);
+			const nextId = nextVariable.id;
+			node.setBoundVariable(variableProperty, nextId);
+		}
+	});
+};
+
 /**
  * Recursively apply tokens to all nodes within root
  */
-export const applyTokens = (root: SceneNode, styles: G.ThemeStyles) => {
+export const applyTokens = (
+	root: SceneNode,
+	styles: G.ThemeStyles,
+	variables: G.ThemeVariables
+) => {
 	applyStylesToNode(root, styles.color, ["fillStyleId", "strokeStyleId"]);
 	applyStylesToNode(root, styles.shadow, ["effectStyleId"]);
 	applyStylesToNode(root, styles.font, ["textStyleId"]);
+	applyVariablesToNode(root, variables.number, [
+		"bottomRightRadius",
+		"bottomLeftRadius",
+		"topLeftRadius",
+		"topRightRadius",
+		"paddingBottom",
+		"paddingTop",
+		"paddingLeft",
+		"paddingRight",
+		"height",
+		"width",
+		"maxHeight",
+		"maxWidth",
+		"itemSpacing",
+		"counterAxisSpacing",
+	]);
 
 	if ("children" in root && root.children) {
 		root.children.forEach(async (child) => {
-			applyTokens(child, styles);
+			applyTokens(child, styles, variables);
 		});
 	}
 };
-
-// const tokens: Record<string, TokenFont> = {};
-// styles.forEach((style) => {
-// 	const { name } = style;
-// 	const nameChunks = name.split("/").map((chunk) => chunk.trim());
-// 	// Parse S: <660px syntax to extract the viewport name later
-// 	const isResponsive = nameChunks[0].match(/^(S|M|L|XL):.*px$/);
-// 	let tokenViewport;
-
-// 	if (isResponsive) {
-// 		const responsiveChunks = nameChunks[0].split(":");
-// 		tokenViewport = responsiveChunks[0].trim().toLowerCase() as Viewport;
-// 	}
-
-// 	const tokenNameChunks = isResponsive ? nameChunks.slice(1) : nameChunks;
-// 	const tokenName = tokenNameChunks.join("/");
-
-// 	const formattedName = formatTokenName(tokenName);
-// 	const tokenData = { id: style.id, key: style.key, type: "font" } as const;
-// 	let currentToken = tokens[formattedName] || {};
-
-// 	if (!currentToken.name) currentToken.name = formattedName;
-
-// 	if (tokenViewport) {
-// 		if (!currentToken.responsive) currentToken.responsive = {};
-// 		currentToken.responsive[tokenViewport] = tokenData;
-// 	} else {
-// 		currentToken = { ...currentToken, ...tokenData };
-// 	}
-
-// 	tokens[formattedName] = currentToken;
-// });
-
-// return tokens;

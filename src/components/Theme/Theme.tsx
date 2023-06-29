@@ -10,11 +10,8 @@ const Theme = (props: T.Props) => {
 	const hasTheme = data?.id;
 
 	const renderSubtitle = () => {
-		if (!data) return "Light and Dark mode";
-		if (data.lightMode && data.darkMode) return "Light and Dark mode";
-		if (data.lightMode) return "Light mode only";
-		if (data.darkMode) return "Dark mode only";
-		return "No modes synced";
+		if (data?.data) return "Light and dark mode";
+		return "Not synced yet";
 	};
 
 	const handleClick: CardProps["onClick"] = (event) => {

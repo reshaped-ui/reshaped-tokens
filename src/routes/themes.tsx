@@ -1,11 +1,9 @@
 import * as React from "react";
-import { View, DropdownMenu, Button, Link, Text, Avatar } from "reshaped";
+import { View, Link, Text, Avatar } from "reshaped";
 import EmptyState from "components/EmptyState";
 import Theme from "components/Theme";
 import Layout from "components/Layout";
 import IconSun from "icons/Sun";
-import IconMoon from "icons/Moon";
-import IconChevronDown from "icons/ChevronDown";
 import IconSync from "icons/Sync";
 import * as ThemeService from "services/theme";
 import * as G from "types/global";
@@ -19,10 +17,9 @@ type Props = {
 const ThemesRoute = (props: Props) => {
 	const { themes, onCreateClick, onThemeEditClick } = props;
 	const [selectedTab, setSelectedTab] = React.useState<"themes" | "about">("themes");
-	const [selectedMode, setSelectedMode] = React.useState<G.ColorMode>("light");
 	const [selectedThemeId, setSelectedThemeId] = React.useState<string | null>(null);
 	const selectedTheme = selectedThemeId && themes[selectedThemeId];
-	const canApplyTheme = selectedTheme && (selectedTheme.lightMode || selectedTheme.darkMode);
+	const canApplyTheme = selectedTheme && selectedTheme.data;
 	const ids = Object.keys(themes);
 	const hasThemes = ids.length > 0;
 
@@ -35,41 +32,16 @@ const ThemesRoute = (props: Props) => {
 
 	const handleApply = () => {
 		if (!selectedTheme) return;
-		const data = selectedMode === "dark" ? selectedTheme.darkMode : selectedTheme.lightMode;
+		const { data } = selectedTheme;
 
 		if (!data) return;
-		ThemeService.plugin.requestApplyTheme(data.styles);
+		ThemeService.plugin.requestApplyTheme({ styles: data.styles, variables: data.variables });
 	};
-
-	const colorModeSlot = selectedTab === "themes" &&
-		selectedTheme &&
-		selectedTheme.lightMode &&
-		selectedTheme.darkMode && (
-			<DropdownMenu position="top-start" width="140px">
-				<DropdownMenu.Trigger>
-					{(attributes) => (
-						<Button
-							size="small"
-							variant="outline"
-							attributes={attributes}
-							icon={selectedMode === "dark" ? IconMoon : IconSun}
-							endIcon={IconChevronDown}
-						>
-							{selectedMode === "dark" ? "Dark mode" : "Light mode"}
-						</Button>
-					)}
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content>
-					<DropdownMenu.Item onClick={() => setSelectedMode("light")}>Light mode</DropdownMenu.Item>
-					<DropdownMenu.Item onClick={() => setSelectedMode("dark")}>Dark mode</DropdownMenu.Item>
-				</DropdownMenu.Content>
-			</DropdownMenu>
-		);
 
 	const aboutSlot = selectedTab === "about" && (
 		<View padding={2} align="center" justify="center">
 			<div>
-				Built by{" "}
+				Built with{" "}
 				<Link attributes={{ target: "_blank" }} href="https://reshaped.so" color="primary">
 					Reshaped
 				</Link>{" "}
@@ -103,7 +75,7 @@ const ThemesRoute = (props: Props) => {
 					  }
 					: undefined
 			}
-			secondaryActionSlot={colorModeSlot || aboutSlot}
+			secondaryActionSlot={selectedTab === "about" && aboutSlot}
 		>
 			{selectedTab === "themes" && !hasThemes && <EmptyState onCreateClick={onCreateClick} />}
 
@@ -133,7 +105,7 @@ const ThemesRoute = (props: Props) => {
 							<Avatar icon={IconSun} squared color="neutral" variant="faded" size={8} />
 							<View.Item>
 								<Text variant="body-2" weight="medium">
-									Open me in light mode library
+									Open me in the theme library
 								</Text>
 								<Text color="neutral-faded">Make sure your styles are published</Text>
 							</View.Item>
@@ -147,17 +119,8 @@ const ThemesRoute = (props: Props) => {
 								<Text color="neutral-faded">Ah, and add your theme name</Text>
 							</View.Item>
 						</View>
-						<View direction="row" gap={2}>
-							<Avatar icon={IconMoon} squared color="neutral" variant="faded" size={8} />
-							<View.Item>
-								<Text variant="body-2" weight="medium">
-									Repeat for dark mode
-								</Text>
-								<Text color="neutral-faded">Open another file to sync Dark mode</Text>
-							</View.Item>
-						</View>
 						<View.Item as="p">
-							Done, enjoy changing themes and modes!
+							Done, enjoy changing themes!
 							<br />
 							Just in case, I&apos;ve got&nbsp;
 							<Link

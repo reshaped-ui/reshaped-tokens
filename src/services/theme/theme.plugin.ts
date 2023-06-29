@@ -36,9 +36,9 @@ export const requestApplyTheme = (payload: T.PluginActionRequestApplyTheme["payl
 	});
 };
 
-export const requestStyles = (payload: T.PluginActionRequestStyles["payload"]) => {
+export const requestStyles = () => {
 	sendPluginMessage({
 		type: T.PluginActionType.requestStyles,
-		payload,
+		payload: {},
 	});
 };

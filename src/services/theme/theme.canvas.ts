@@ -1,5 +1,10 @@
 import { sendCanvasMessage } from "utilities/channel";
-import { getColorTokens, getShadowTokens, getFontTokens } from "utilities/tokens";
+import {
+	getColorTokens,
+	getShadowTokens,
+	getFontTokens,
+	getNumberVariables,
+} from "utilities/tokens";
 import * as G from "types/global";
 import * as T from "./theme.types";
 
@@ -10,20 +15,18 @@ export const getThemeIds = async () => {
 	return storageKeys.filter((key) => key.startsWith(storagePrefix));
 };
 
-export const importStyles = async (payload: {
-	colorMode: G.ColorMode;
-	fileName: string;
-	fileKey?: string;
-}) => {
-	const { colorMode, fileName, fileKey } = payload;
+export const importStyles = async (payload: { fileName: string; fileKey?: string }) => {
+	const { fileName, fileKey } = payload;
 	const colorTokens = await getColorTokens();
 	const shadowTokens = await getShadowTokens();
 	const fontTokens = await getFontTokens();
+	const numberVariables = await getNumberVariables();
 
 	if (
 		Object.keys(colorTokens).length === 0 &&
 		Object.keys(shadowTokens).length === 0 &&
-		Object.keys(fontTokens).length === 0
+		Object.keys(fontTokens).length === 0 &&
+		Object.keys(numberVariables).length === 0
 	) {
 		figma.notify("We couldn't find any published styles in this file", { error: true });
 		return;
@@ -35,9 +38,13 @@ export const importStyles = async (payload: {
 		font: fontTokens,
 	};
 
+	const variables = {
+		number: numberVariables,
+	};
+
 	sendCanvasMessage({
 		type: T.CanvasActionType.importStyles,
-		payload: { styles, colorMode, fileName, fileKey },
+		payload: { styles, variables, fileName, fileKey },
 	});
 };
 

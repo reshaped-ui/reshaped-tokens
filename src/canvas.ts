@@ -25,28 +25,31 @@ figma.showUI(__html__, { height: 420, themeColors: true });
 			ThemeService.canvas.deleteThemeFromStorage(payload);
 		});
 
-		receivePluginMessage(msg, ThemeService.PluginActionType.requestStyles, ({ colorMode }) => {
+		receivePluginMessage(msg, ThemeService.PluginActionType.requestStyles, () => {
 			ThemeService.canvas.importStyles({
-				colorMode,
 				fileName: figma.root.name,
 				fileKey: figma.fileKey,
 			});
 		});
 
-		receivePluginMessage(msg, ThemeService.PluginActionType.requestApplyTheme, (styles) => {
-			const selection = figma.currentPage.selection;
+		receivePluginMessage(
+			msg,
+			ThemeService.PluginActionType.requestApplyTheme,
+			({ styles, variables }) => {
+				const selection = figma.currentPage.selection;
 
-			if (!selection.length) {
-				figma.notify("Select a layer to apply a theme");
-				return;
+				if (!selection.length) {
+					figma.notify("Select a layer to apply a theme");
+					return;
+				}
+
+				selection.forEach(async (selectionNode) => {
+					applyTokens(selectionNode, styles, variables);
+				});
+
+				figma.notify("🎨 Theme applied");
 			}
-
-			selection.forEach(async (selectionNode) => {
-				applyTokens(selectionNode, styles);
-			});
-
-			figma.notify("🎨 Theme applied");
-		});
+		);
 
 		receivePluginMessage(msg, FigmaService.PluginActionType.notify, ({ message }) => {
 			figma.notify(message);

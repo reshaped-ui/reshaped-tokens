@@ -13,12 +13,9 @@ export type PluginActionUpdateTheme = G.Message<PluginActionType.updateTheme, G.
 export type PluginActionDeleteTheme = G.Message<PluginActionType.deleteTheme, Pick<G.Theme, "id">>;
 export type PluginActionRequestApplyTheme = G.Message<
 	PluginActionType.requestApplyTheme,
-	G.ThemeStyles
+	{ styles: G.ThemeStyles; variables: G.ThemeVariables }
 >;
-export type PluginActionRequestStyles = G.Message<
-	PluginActionType.requestStyles,
-	{ colorMode: G.ColorMode }
->;
+export type PluginActionRequestStyles = G.Message<PluginActionType.requestStyles, {}>;
 export type PluginAction =
 	| PluginActionCreateTheme
 	| PluginActionUpdateTheme
@@ -34,6 +31,11 @@ export enum CanvasActionType {
 export type CanvasActionLoadTheme = G.Message<CanvasActionType.loadTheme, G.Theme>;
 export type CanvasActionImportStyles = G.Message<
 	CanvasActionType.importStyles,
-	{ colorMode: G.ColorMode; styles: G.ThemeStyles; fileName: string; fileKey?: string }
+	{
+		styles: G.ThemeStyles;
+		variables: G.ThemeVariables;
+		fileName: string;
+		fileKey?: string;
+	}
 >;
 export type CanvasAction = CanvasActionLoadTheme | CanvasActionImportStyles;

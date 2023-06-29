@@ -7,10 +7,22 @@ export type Message<Type, Payload> = Payload extends void
 			payload: Payload;
 	  };
 
-export type ColorMode = "light" | "dark";
 export type Viewport = "s" | "m" | "l" | "xl";
 
-export type BaseToken<T extends string> = { styleName: string; styleKey: string; type: T };
+export type BaseVariable<T extends string> = {
+	variableName: string;
+	variableKey: string;
+	type: T;
+	id: string;
+};
+export type VariableNumber = BaseVariable<"number">;
+
+export type BaseToken<T extends string> = {
+	styleName: string;
+	styleKey: string;
+	type: T;
+	id: string;
+};
 export type TokenColor = BaseToken<"color">;
 export type TokenFont = BaseToken<"font">;
 export type TokenShadow = BaseToken<"shadow">;
@@ -21,12 +33,19 @@ export type ThemeStyles = {
 	shadow: Record<string, TokenShadow>;
 };
 
-export type ColorModeData = { file: { name: string; key?: string }; styles: ThemeStyles };
+export type ThemeVariables = {
+	number: Record<string, VariableNumber>;
+};
+
+export type ThemeData = {
+	file: { name: string; key?: string };
+	styles: ThemeStyles;
+	variables: ThemeVariables;
+};
 
 export type Theme = {
 	id: string;
 	name: string;
 	thumbnailColor: string;
-	lightMode?: ColorModeData | null;
-	darkMode?: ColorModeData | null;
+	data: ThemeData | null;
 };
