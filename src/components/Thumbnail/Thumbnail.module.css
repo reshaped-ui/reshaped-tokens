@@ -1,47 +1,47 @@
 .root {
-  height: var(--rs-unit-x8);
-  width: var(--rs-unit-x8);
-  border-radius: var(--rs-unit-radius-medium);
-  border: 1px dashed var(--rs-color-border-neutral);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--rs-color-background-elevation-base);
-  position: relative;
+	height: var(--rs-unit-x8);
+	width: var(--rs-unit-x8);
+	border-radius: var(--rs-unit-radius-medium);
+	border: 1px dashed var(--rs-color-border-neutral);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--rs-color-background-elevation-raised);
+	position: relative;
 }
 
 .--large {
-  border-radius: var(--rs-unit-radius-large);
-  height: calc(var(--rs-unit-x1) * 14);
-  width: calc(var(--rs-unit-x1) * 14);
-  border-color: var(--rs-color-border-neutral-faded);
-  border-style: solid;
-  border-width: 2px;
+	border-radius: var(--rs-unit-radius-large);
+	height: calc(var(--rs-unit-x1) * 14);
+	width: calc(var(--rs-unit-x1) * 14);
+	border-color: var(--rs-color-border-neutral-faded);
+	border-style: solid;
+	border-width: 2px;
 }
 
 .--large::before {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  inset: var(--rs-unit-x1);
-  border: 1px dashed var(--rs-color-border-neutral);
-  border-radius: var(--rs-unit-radius-medium);
+	content: "";
+	position: absolute;
+	pointer-events: none;
+	inset: var(--rs-unit-x1);
+	border: 1px dashed var(--rs-color-border-neutral);
+	border-radius: var(--rs-unit-radius-medium);
 }
 
 .--colored {
-  border-color: var(--rs-color-border-neutral-faded);
-  background-color: var(--local-color);
-  color: var(--rs-color-white);
-  border-style: solid;
-  border-width: 2px;
+	border-color: var(--rs-color-border-neutral-faded);
+	background-color: var(--local-color);
+	color: var(--rs-color-white);
+	border-style: solid;
+	border-width: 2px;
 }
 
 .--large.--colored {
-  background-color: var(--rs-color-background-page);
-  border-color: var(--local-color);
-  color: var(--local-color);
+	background-color: var(--rs-color-background-page);
+	border-color: var(--local-color);
+	color: var(--local-color);
 }
 
 .--large.--colored::before {
-  content: none;
+	content: none;
 }

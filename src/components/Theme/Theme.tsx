@@ -7,7 +7,6 @@ import * as T from "./Theme.types";
 
 const Theme = (props: T.Props) => {
 	const { onClick, onEditClick, data, selected } = props;
-	const hasTheme = data?.id;
 
 	const renderSubtitle = () => {
 		if (data?.data) return "Light and dark mode";
@@ -31,7 +30,7 @@ const Theme = (props: T.Props) => {
 				<Thumbnail color={data?.thumbnailColor} />
 				<View.Item grow>
 					<Text variant="body-2" weight="medium">
-						{hasTheme ? data?.name : "New theme"}
+						{data?.name || data?.data?.file.name || "New theme"}
 					</Text>
 					<Text variant="body-3" color="neutral-faded">
 						{renderSubtitle()}
