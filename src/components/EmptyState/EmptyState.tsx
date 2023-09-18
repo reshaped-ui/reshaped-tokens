@@ -20,7 +20,7 @@ const EmptyState = (props: T.Props) => {
 						<Thumbnail large />
 					</div>
 					<View.Item gapBefore={3}>
-						<Text variant="body-2" weight="medium">
+						<Text variant="body-3" weight="medium">
 							New theme
 						</Text>
 					</View.Item>

@@ -94,7 +94,7 @@ const ThemesRoute = (props: Props) => {
 			)}
 
 			{selectedTab === "about" && (
-				<Text variant="body-2">
+				<Text variant="body-3">
 					<View gap={4}>
 						<View.Item as="p">
 							Oh, hi <span aria-hidden="true">👋</span> I&apos;m a plugin that can add themes and
@@ -104,7 +104,7 @@ const ThemesRoute = (props: Props) => {
 						<View direction="row" gap={2}>
 							<Avatar icon={IconSun} squared color="neutral" variant="faded" size={8} />
 							<View.Item>
-								<Text variant="body-2" weight="medium">
+								<Text variant="body-3" weight="medium">
 									Open me in the theme library
 								</Text>
 								<Text color="neutral-faded">Make sure your styles are published</Text>
@@ -113,7 +113,7 @@ const ThemesRoute = (props: Props) => {
 						<View direction="row" gap={2}>
 							<Avatar icon={IconSync} squared color="neutral" variant="faded" size={8} />
 							<View.Item>
-								<Text variant="body-2" weight="medium">
+								<Text variant="body-3" weight="medium">
 									Sync styles and save
 								</Text>
 								<Text color="neutral-faded">Ah, and add your theme name</Text>

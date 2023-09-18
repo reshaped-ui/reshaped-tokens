@@ -11,5 +11,6 @@ export type Props = {
 	action?: Pick<ButtonProps, "disabled" | "onClick"> & {
 		text: string;
 	};
+	titleActionSlot?: React.ReactNode;
 	secondaryActionSlot?: React.ReactNode;
 };

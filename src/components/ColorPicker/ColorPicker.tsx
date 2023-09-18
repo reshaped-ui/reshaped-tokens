@@ -39,7 +39,7 @@ const ColorPicker = (props: T.Props) => {
 
 	return (
 		<View gap={2}>
-			<Text color="neutral-faded" variant="body-2">
+			<Text color="neutral-faded" variant="body-3">
 				Thumbnail color
 			</Text>
 			<View direction="row" gap={2}>

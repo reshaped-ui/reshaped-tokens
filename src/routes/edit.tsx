@@ -86,7 +86,7 @@ const EditRoute = (props: Props) => {
 			secondaryActionSlot={
 				!!theme && (
 					<View align="end">
-						<Button size="small" color="critical" variant="outline" onClick={handleDelete}>
+						<Button color="critical" variant="outline" onClick={handleDelete}>
 							Delete
 						</Button>
 					</View>
@@ -102,14 +102,10 @@ const EditRoute = (props: Props) => {
 						value={resolvedThemeName}
 						onChange={handleNameChange}
 						inputAttributes={{ ref: nameFieldRef }}
-						endSlot={
-							<Button size="small" onClick={handleThemeSync}>
-								{themeData ? "Re-sync" : "Sync"}
-							</Button>
-						}
+						endSlot={<Button onClick={handleThemeSync}>{themeData ? "Re-sync" : "Sync"}</Button>}
 					/>
 				</View.Item>
-				<Text color="neutral-faded" variant="body-2">
+				<Text color="neutral-faded" variant="body-3">
 					Open a published Figma library with a theme and mode you want to sync
 				</Text>
 				{themeData && (
@@ -124,7 +120,7 @@ const EditRoute = (props: Props) => {
 
 								return (
 									<>
-										<Text variant="body-2" color="neutral-faded">
+										<Text variant="body-3" color="neutral-faded">
 											{title.charAt(0).toUpperCase()}
 											{title.slice(1)}
 										</Text>

@@ -5,8 +5,17 @@ import * as T from "./Layout.types";
 import s from "./Layout.module.css";
 
 const Layout = (props: T.Props) => {
-	const { title, tabs, onNavigateBack, onClick, children, action, secondaryActionSlot, centered } =
-		props;
+	const {
+		title,
+		tabs,
+		onNavigateBack,
+		onClick,
+		children,
+		action,
+		secondaryActionSlot,
+		titleActionSlot,
+		centered,
+	} = props;
 
 	return (
 		<View divided height="100%">
@@ -15,9 +24,12 @@ const Layout = (props: T.Props) => {
 					{onNavigateBack && (
 						<Button variant="ghost" size="small" icon={IconChevronLeft} onClick={onNavigateBack} />
 					)}
-					<Text variant="body-2" weight="medium">
-						{title}
-					</Text>
+					<View.Item grow>
+						<Text variant="body-3" weight="medium">
+							{title}
+						</Text>
+					</View.Item>
+					{titleActionSlot}
 				</View>
 			)}
 			{!!tabs?.length && (
@@ -47,12 +59,7 @@ const Layout = (props: T.Props) => {
 				<View paddingInline={3} paddingBlock={2} gap={2} direction="row" justify="end">
 					{secondaryActionSlot && <View.Item grow>{secondaryActionSlot}</View.Item>}
 					{action && (
-						<Button
-							color="primary"
-							size="small"
-							disabled={action.disabled}
-							onClick={action.onClick}
-						>
+						<Button color="primary" disabled={action.disabled} onClick={action.onClick}>
 							{action.text}
 						</Button>
 					)}

@@ -134,14 +134,33 @@ export const applyVariablesToNode = async (
 	properties: Array<VariableBindableNodeField>
 ) => {
 	properties.forEach(async (variableProperty) => {
-		const variableId = node.boundVariables[variableProperty].id;
+		const variableId = node.boundVariables[variableProperty]?.id;
 		const variable = figma.variables.getVariableById(variableId);
-		const nextKey = variable && variables[variable.name]?.variableKey;
 
-		if (nextKey) {
-			const nextVariable = await importVariableByKey(nextKey);
-			const nextId = nextVariable.id;
-			node.setBoundVariable(variableProperty, nextId);
+		if (!variable) return;
+
+		console.log("LOOP", Object.keys(variables));
+
+		for (let key of Object.keys(variables)) {
+			const formattedVariable = variable && variable.name.split("/").pop()?.trim();
+			const formattedKey = key.split("/").pop()?.trim();
+			const isMatch = formattedKey === formattedVariable;
+			console.log({ formattedKey, formattedVariable });
+
+			if (!isMatch) {
+				continue;
+			}
+			const nextKey = variables[key]?.variableKey;
+			console.log({ variable, key });
+
+			if (nextKey) {
+				const nextVariable = await importVariableByKey(nextKey);
+
+				if (!nextVariable) return;
+				const nextId = nextVariable.id;
+				node.setBoundVariable(variableProperty, nextId);
+				console.log("APPAL");
+			}
 		}
 	});
 };

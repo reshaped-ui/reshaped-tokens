@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, View, Text, Button, Tooltip } from "reshaped";
+import { Card, View, Text, Button } from "reshaped";
 import type { ButtonProps, CardProps } from "reshaped";
 import Thumbnail from "components/Thumbnail";
 import IconEdit from "icons/Edit";
@@ -29,29 +29,25 @@ const Theme = (props: T.Props) => {
 			<View direction="row" align="center" gap={2}>
 				<Thumbnail color={data?.thumbnailColor} />
 				<View.Item grow>
-					<Text variant="body-2" weight="medium">
+					<Text variant="body-3" weight="medium">
 						{data?.name || data?.data?.file.name || "New theme"}
 					</Text>
 					<Text variant="body-3" color="neutral-faded">
 						{renderSubtitle()}
 					</Text>
 				</View.Item>
-				<View direction="row">
+				<View.Item>
 					{data && (
-						<Tooltip text="Edit theme" position="bottom-end">
-							{(attributes) => (
-								<Button.Aligner position="end">
-									<Button
-										attributes={attributes}
-										variant="ghost"
-										icon={IconEdit}
-										onClick={handleEditClick}
-									/>
-								</Button.Aligner>
-							)}
-						</Tooltip>
+						<Button.Aligner position="end">
+							<Button
+								variant="ghost"
+								icon={IconEdit}
+								onClick={handleEditClick}
+								attributes={{ "aria-label": "Edit theme" }}
+							/>
+						</Button.Aligner>
 					)}
-				</View>
+				</View.Item>
 			</View>
 		</Card>
 	);

@@ -6,7 +6,7 @@ import ThemesRoute from "routes/themes";
 import EditRoute from "routes/edit";
 import * as ThemeService from "services/theme";
 import * as G from "types/global";
-import "themes/figma/theme.css";
+import "reshaped/themes/figma/theme.css";
 
 const App = () => {
 	const { setColorMode } = useTheme();
