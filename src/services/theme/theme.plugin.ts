@@ -42,3 +42,10 @@ export const requestStyles = () => {
 		payload: {},
 	});
 };
+
+export const requestUploadTheme = (payload: T.PluginActionRequestUploadTheme["payload"]) => {
+	sendPluginMessage({
+		type: T.PluginActionType.requestUploadTheme,
+		payload,
+	});
+};

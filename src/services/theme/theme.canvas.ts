@@ -4,6 +4,7 @@ import {
 	getShadowTokens,
 	getFontTokens,
 	getNumberVariables,
+	uploadJsonTheme,
 } from "utilities/tokens";
 import * as G from "types/global";
 import * as T from "./theme.types";
@@ -63,4 +64,16 @@ export const saveThemeToStorage = async (payload: G.Theme) => {
 
 export const deleteThemeFromStorage = async (payload: Pick<G.Theme, "id">) => {
 	await figma.clientStorage.deleteAsync(`${storagePrefix}${payload.id}`);
+};
+
+export const uploadTheme = (theme: any) => {
+	try {
+		uploadJsonTheme(theme);
+	} catch (e) {
+		if (e instanceof Error) {
+			figma.notify("Error while uploading the theme, check console for more info", { error: true });
+			throw new Error(e.message);
+		}
+	}
+	figma.notify("Theme uploaded");
 };

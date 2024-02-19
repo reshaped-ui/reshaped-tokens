@@ -17,7 +17,10 @@ module.exports = (env, argv) => ({
 	module: {
 		rules: [
 			{ test: /\.tsx?$/, use: "ts-loader" },
-			{ test: /\.css$/, use: ["style-loader", { loader: "css-loader" }] },
+			{
+				test: /\.css$/,
+				use: ["style-loader", { loader: "css-loader" }, { loader: "postcss-loader" }],
+			},
 		],
 	},
 

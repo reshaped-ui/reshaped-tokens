@@ -32,6 +32,10 @@ figma.showUI(__html__, { height: 420, themeColors: true });
 			});
 		});
 
+		receivePluginMessage(msg, ThemeService.PluginActionType.requestUploadTheme, (payload) => {
+			ThemeService.canvas.uploadTheme(payload.theme);
+		});
+
 		receivePluginMessage(
 			msg,
 			ThemeService.PluginActionType.requestApplyTheme,

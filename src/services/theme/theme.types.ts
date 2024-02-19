@@ -6,6 +6,7 @@ export enum PluginActionType {
 	deleteTheme = "deleteTheme",
 	requestApplyTheme = "requestApplyTheme",
 	requestStyles = "requestStyles",
+	requestUploadTheme = "requestUploadTheme",
 }
 
 export type PluginActionCreateTheme = G.Message<PluginActionType.createTheme, G.Theme>;
@@ -15,13 +16,19 @@ export type PluginActionRequestApplyTheme = G.Message<
 	PluginActionType.requestApplyTheme,
 	{ styles: G.ThemeStyles; variables: G.ThemeVariables }
 >;
+export type PluginActionRequestUploadTheme = G.Message<
+	PluginActionType.requestUploadTheme,
+	{ theme: any }
+>;
+
 export type PluginActionRequestStyles = G.Message<PluginActionType.requestStyles, {}>;
 export type PluginAction =
 	| PluginActionCreateTheme
 	| PluginActionUpdateTheme
 	| PluginActionDeleteTheme
 	| PluginActionRequestApplyTheme
-	| PluginActionRequestStyles;
+	| PluginActionRequestStyles
+	| PluginActionRequestUploadTheme;
 
 export enum CanvasActionType {
 	loadTheme = "loadTheme",

@@ -1,5 +1,48 @@
 import * as G from "types/global";
 
+function hexToRgb(hex: string) {
+	return {
+		r: parseInt(hex.slice(1, 3), 16) / 255,
+		g: parseInt(hex.slice(3, 5), 16) / 255,
+		b: parseInt(hex.slice(5, 7), 16) / 255,
+	};
+}
+
+const formatFontName = (s: string) => {
+	const name = s.replace(/([a-z][a-z])([A-Z]|[0-9])/g, "$1 $2").toLowerCase();
+	return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+function formatColorName(name: string) {
+	const chunks = name
+		.replace(/([A-Z])/g, " $1")
+		.trim()
+		.split(" ");
+	const isOnColor = name.startsWith("on");
+
+	// Ignore on branc
+	if (isOnColor && chunks.length === 2) {
+		return;
+	}
+
+	if (chunks.length === 1) {
+		chunks.unshift("static");
+	}
+
+	return chunks
+		.map((word, index) => {
+			const slashIndex = isOnColor ? 1 : 0;
+			const formattedWord =
+				index === 0 || index === slashIndex + 1
+					? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+					: word.toLowerCase();
+
+			return formattedWord + (slashIndex === index ? " /" : "");
+		})
+		.join(" ")
+		.replace(" / ", "/");
+}
+
 /**
  * Import local style tokens from Figma
  */
@@ -48,15 +91,23 @@ const getTokens = async <Type extends "color" | "shadow" | "font">(
 	styles: BaseStyle[]
 ) => {
 	const result: Record<string, G.BaseToken<Type>> = {};
+	let hasUnpublished = false;
 
 	const asyncQueue = styles.map(async (style) => {
 		const status = await style.getPublishStatusAsync();
 
-		if (status === "UNPUBLISHED") return;
+		if (status === "UNPUBLISHED") {
+			hasUnpublished = true;
+			return;
+		}
+
 		result[style.name] = { styleName: style.name, type, styleKey: style.key, id: style.id };
 	});
 
 	await Promise.all(asyncQueue);
+
+	if (hasUnpublished)
+		figma.notify("Some of the styles are unpublished and they were not synced", { error: true });
 	return result;
 };
 
@@ -139,8 +190,6 @@ export const applyVariablesToNode = async (
 
 		if (!variable) return;
 
-		console.log("LOOP", Object.keys(variables));
-
 		for (let key of Object.keys(variables)) {
 			const formattedVariable = variable && variable.name.split("/").pop()?.trim();
 			const formattedKey = key.split("/").pop()?.trim();
@@ -198,4 +247,221 @@ export const applyTokens = (
 			applyTokens(child, styles, variables);
 		});
 	}
+};
+
+/**
+ * Convert reshaped config to figma styles / variables
+ */
+
+const localStyles: Record<string, any> = {};
+const localCollections: Record<string, any> = {};
+const localVariables: Record<string, any> = {};
+
+const getOrCreateCollection = (name: string) => {
+	return localCollections[name] || figma.variables.createVariableCollection(name);
+};
+
+const getOrCreateVariable = (name: string, collection: any, type: string) => {
+	console.log({ name });
+	// @ts-ignore
+	return localVariables[name] || figma.variables.createVariable(name, collection, type);
+};
+
+const getOrCreatePaintStyle = (name: string) => {
+	const localStyle = localStyles[name];
+	console.log({ localStyle, name, localStyles });
+
+	if (localStyle) return localStyle;
+
+	const style = figma.createPaintStyle();
+	style.name = name;
+};
+
+const getOrCreateEffectStyle = (name: string) => {
+	const localStyle = localStyles[name];
+
+	if (localStyle) return localStyle;
+
+	const style = figma.createEffectStyle();
+	style.name = name;
+};
+
+const getOrCreateTextStyle = (name: string) => {
+	const localStyle = localStyles[name];
+
+	if (localStyle) return localStyle;
+
+	const style = figma.createTextStyle();
+	style.name = name;
+};
+
+const uploadJsonUnitCollection = (theme: any) => {
+	const collection = getOrCreateCollection("Unit");
+	const modeId = collection.modes[0].modeId;
+	let baseUnit: number = 0;
+	collection.renameMode(modeId, "Value");
+
+	Object.keys(theme.unit).forEach((key) => {
+		const value = theme.unit[key];
+		let name = "";
+
+		if (key === "base") {
+			baseUnit = value.px;
+			return;
+		}
+
+		if (key.startsWith("radius")) {
+			name = `Radius/${key.replace("radius", "")}`;
+		} else {
+			name = `Layout/${key}`;
+		}
+
+		const variable = getOrCreateVariable(name, collection, "FLOAT");
+		variable.setValueForMode(modeId, value.px);
+	});
+
+	const fullRadiusVariable = getOrCreateVariable("Radius/Circular", collection, "FLOAT");
+	fullRadiusVariable.setValueForMode(modeId, 999);
+
+	const noneRadiusVariable = getOrCreateVariable("Radius/None", collection, "FLOAT");
+	noneRadiusVariable.setValueForMode(modeId, 0);
+
+	if (baseUnit) {
+		[12, 14, 16, 18, 20].forEach((x) => {
+			const noneRadiusVariable = getOrCreateVariable(`Layout/x${x}`, collection, "FLOAT");
+			noneRadiusVariable.setValueForMode(modeId, x * baseUnit);
+		});
+	}
+
+	return { collection, modeId };
+};
+
+const uploadJsonColorCollection = (theme: any) => {
+	const collection = getOrCreateCollection("Color");
+	const lightModeId = collection.modes[0].modeId;
+	collection.renameMode(lightModeId, "Light mode");
+	const darkModeId = collection.modes[1]?.modeId || collection.addMode("Dark mode");
+
+	Object.keys(theme.color).forEach((key) => {
+		const value = theme.color[key];
+
+		if (key.startsWith("rgb")) return;
+
+		const name = formatColorName(key);
+
+		if (!name) return;
+
+		const variable = getOrCreateVariable(name, collection, "COLOR");
+		variable.setValueForMode(lightModeId, hexToRgb(value.hex));
+		variable.setValueForMode(darkModeId, hexToRgb(value.hexDark || value.hex));
+		const style = getOrCreatePaintStyle(name);
+		const paint: SolidPaint = {
+			type: "SOLID",
+			color: { r: 0, b: 0, g: 0 },
+		};
+		style.paints = [paint];
+
+		const solidPaint = style.paints[0] as SolidPaint;
+		const newPaint = figma.variables.setBoundVariableForPaint(solidPaint, "color", variable);
+
+		style.paints = [newPaint];
+	});
+};
+
+const uploadJsonEffects = (theme: any) => {
+	Object.keys(theme.shadow).forEach((key) => {
+		const value = theme.shadow[key];
+
+		const style = getOrCreateEffectStyle(key.charAt(0).toUpperCase() + key.slice(1));
+
+		style.effects = value.map((value: any) => ({
+			type: "DROP_SHADOW",
+			offset: { x: value.offsetX, y: value.offsetY },
+			spread: value.spreadRadius,
+			radius: value.blurRadius,
+			color: { ...hexToRgb(theme.color[value.colorToken].hex), a: value.opacity || 1 },
+			visible: true,
+			blendMode: "NORMAL",
+		}));
+
+		const styleReverse = getOrCreateEffectStyle(
+			key.charAt(0).toUpperCase() + key.slice(1) + " reverse"
+		);
+		styleReverse.effects = value.map((value: any) => ({
+			type: "DROP_SHADOW",
+			offset: { x: value.offsetX, y: -value.offsetY },
+			spread: value.spreadRadius,
+			radius: value.blurRadius,
+			color: { ...hexToRgb(theme.color[value.colorToken].hex), a: value.opacity || 1 },
+			visible: true,
+			blendMode: "NORMAL",
+		}));
+	});
+};
+
+export const uploadJsonTypography = (
+	theme: any,
+	collection: VariableCollection,
+	modeId: string
+) => {
+	Object.keys(theme.font).forEach(async (key) => {
+		const value = theme.font[key];
+		const name = formatFontName(key);
+
+		const lineHeightVariable = getOrCreateVariable(`Line height/${name}`, collection, "FLOAT");
+		lineHeightVariable.setValueForMode(modeId, value.lineHeight.px);
+
+		const family = theme.fontFamily[value.fontFamilyToken].family.split(",")[0];
+
+		if (name.startsWith("Title")) {
+			const weight = value.fontWeightToken.charAt(0).toUpperCase() + value.fontWeightToken.slice(1);
+			const weightStyle = weight === "Heavy" ? "Black" : weight;
+
+			await figma.loadFontAsync({ family, style: weightStyle });
+
+			const style = getOrCreateTextStyle(name);
+			style.fontName = { family, style: weightStyle };
+			style.fontSize = value.fontSize.px;
+			style.lineHeight = { value: value.lineHeight.px, unit: "PIXELS" };
+		} else {
+			["Regular", "Medium", "Bold"].forEach(async (weightName) => {
+				await figma.loadFontAsync({ family, style: weightName });
+				const style = getOrCreateTextStyle(`${name}/${weightName}`);
+				style.fontName = { family, style: weightName };
+				style.fontSize = value.fontSize.px;
+				style.lineHeight = { value: value.lineHeight.px, unit: "PIXELS" };
+			});
+		}
+	});
+};
+
+export const uploadJsonTheme = (theme: any) => {
+	figma.variables.getLocalVariableCollections().forEach((collection) => {
+		localCollections[collection.name] = collection;
+		// collection.remove();
+	});
+
+	figma.variables.getLocalVariables().forEach((variable) => {
+		localVariables[variable.name] = variable;
+	});
+
+	figma.getLocalPaintStyles().forEach((style) => {
+		localStyles[style.name] = style;
+		// style.remove();
+	});
+
+	figma.getLocalEffectStyles().forEach((style) => {
+		localStyles[style.name] = style;
+		// style.remove();
+	});
+
+	figma.getLocalTextStyles().forEach((style) => {
+		localStyles[style.name] = style;
+		// style.remove();
+	});
+
+	const { collection, modeId } = uploadJsonUnitCollection(theme);
+	uploadJsonColorCollection(theme);
+	uploadJsonEffects(theme);
+	uploadJsonTypography(theme, collection, modeId);
 };
