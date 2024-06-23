@@ -1,7 +1,7 @@
-import * as G from "types/global";
+import * as G from "types/global.js";
 
 export enum PluginActionType {
-	notify = "notify",
+  notify = "notify",
 }
 
 export type PluginActionNotify = G.Message<PluginActionType.notify, { message: string }>;

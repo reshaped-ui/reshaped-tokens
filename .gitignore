@@ -1,4 +1,6 @@
 dist
 node_modules
 
+manifest.json
+
 .DS_Store

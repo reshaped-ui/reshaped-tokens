@@ -1,8 +1,0 @@
-{
-	"name": "Reshaped",
-	"id": "1132648122057236517",
-	"api": "1.0.0",
-	"main": "dist/canvas.js",
-	"ui": "dist/ui.html",
-	"editorType": ["figma"]
-}

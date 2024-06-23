@@ -1,35 +1,12 @@
-import {
-	createTheme,
-	updateTheme,
-	deleteTheme,
-	requestStyles,
-	requestApplyTheme,
-	requestUploadTheme,
-} from "./theme.plugin";
-import {
-	saveThemeToStorage,
-	deleteThemeFromStorage,
-	loadThemeFromStorage,
-	importStyles,
-	getThemeIds,
-	uploadTheme,
-} from "./theme.canvas";
+import { requestUploadTheme } from "./theme.plugin.js";
+import { uploadTheme } from "./theme.canvas.js";
 
 export const plugin = {
-	createTheme,
-	updateTheme,
-	deleteTheme,
-	requestStyles,
-	requestApplyTheme,
-	requestUploadTheme,
-};
-export const canvas = {
-	saveThemeToStorage,
-	loadThemeFromStorage,
-	deleteThemeFromStorage,
-	importStyles,
-	getThemeIds,
-	uploadTheme,
+  requestUploadTheme,
 };
 
-export { PluginAction, PluginActionType, CanvasAction, CanvasActionType } from "./theme.types";
+export const canvas = {
+  uploadTheme,
+};
+
+export { PluginAction, PluginActionType, CanvasAction } from "./theme.types.js";
