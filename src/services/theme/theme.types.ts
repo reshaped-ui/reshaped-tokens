@@ -6,7 +6,7 @@ export enum PluginActionType {
 
 export type PluginActionRequestUploadTheme = G.Message<
   PluginActionType.requestUploadTheme,
-  { theme: G.Theme; name: string }
+  { theme: G.Theme; name: string; fontFamily: { title: string; body: string } }
 >;
 
 export type PluginAction = PluginActionRequestUploadTheme;

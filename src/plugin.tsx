@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { ChangeEvent, FormEvent, MouseEvent, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Reshaped,
@@ -14,6 +14,7 @@ import {
   useToast,
 } from "reshaped";
 import * as ThemeService from "services/theme/index.js";
+import type * as G from "types/global.js";
 import "reshaped/themes/figma/theme.css";
 
 const App = () => {
@@ -22,16 +23,27 @@ const App = () => {
   const confirmToggle = useToggle();
   const [themeJson, setThemeJson] = useState<string | null>(null);
   const [themeName, setThemeName] = useState("");
+  const theme = themeJson ? (JSON.parse(themeJson) as G.Theme) : null;
+  const titleFontFallback = theme?.fontFamily.title.family.split(", ")[0];
+  const bodyFontFallback = theme?.fontFamily.body.family.split(", ")[0];
+  const [titleFontFamily, setTitleFontFamily] = useState("");
+  const [bodyFontFamily, setBodyFontFamily] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleThemeUploadConfirm = () => {
     if (!themeJson) return;
-    ThemeService.plugin.requestUploadTheme({ theme: JSON.parse(themeJson), name: themeName });
+    ThemeService.plugin.requestUploadTheme({
+      theme: JSON.parse(themeJson),
+      name: themeName,
+      fontFamily: { title: titleFontFamily || titleFontFallback!, body: bodyFontFamily || bodyFontFallback! },
+    });
     confirmToggle.deactivate();
     setThemeJson(null);
   };
 
-  const handleUploadClick = () => {
+  const handleUploadClick = (e: FormEvent | MouseEvent) => {
+    e.preventDefault();
+
     if (!themeName) {
       toast.show({ text: "We're missing the theme name 😬" });
       return;
@@ -42,7 +54,7 @@ const App = () => {
     inputRef.current!.click();
   };
 
-  const handleThemeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThemeUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length <= 0) return;
 
@@ -86,30 +98,60 @@ const App = () => {
           </Text>
         </View.Item>
         <View.Item>
-          <FormControl>
-            <FormControl.Label>Theme name</FormControl.Label>
-            <View gap={2} direction="row">
-              <View.Item grow>
-                <TextField
-                  name="themeName"
-                  placeholder="Reshaped"
-                  onChange={(args) => setThemeName(args.value)}
-                  value={themeName}
-                />
-              </View.Item>
-              <Button color="primary" onClick={handleUploadClick}>
-                Upload
-              </Button>
-              <input type="file" accept=".json" onChange={handleThemeUpload} hidden ref={inputRef} />
-            </View>
-          </FormControl>
-          <FormControl.Helper>Theme name will be used as a Figma variables mode</FormControl.Helper>
+          <form onSubmit={handleUploadClick}>
+            <FormControl>
+              <FormControl.Label>Theme name</FormControl.Label>
+              <View gap={2} direction="row">
+                <View.Item grow>
+                  <TextField
+                    name="themeName"
+                    placeholder="Reshaped"
+                    onChange={(args) => setThemeName(args.value)}
+                    value={themeName}
+                  />
+                </View.Item>
+                <Button color="primary" onClick={handleUploadClick}>
+                  Upload
+                </Button>
+                <input type="file" accept=".json" onChange={handleThemeUpload} hidden ref={inputRef} />
+              </View>
+              <FormControl.Helper>Theme name will be used as a Figma variables mode</FormControl.Helper>
+            </FormControl>
+          </form>
         </View.Item>
       </View>
       <Modal active={confirmToggle.active} onClose={confirmToggle.deactivate}>
         <View gap={3}>
-          <Text>
-            Syncing the theme from the code will create new variables or override existing ones for the `{themeName}`{" "}
+          <View.Item>
+            <Modal.Title>
+              <Text variant="body-1">Almost done</Text>
+            </Modal.Title>
+            <Modal.Subtitle>
+              Enter which font families you're going to use in Figma for the `{themeName}` theme
+            </Modal.Subtitle>
+          </View.Item>
+          <FormControl>
+            <FormControl.Label>Title font-family</FormControl.Label>
+            <TextField
+              name="titleFontFamily"
+              placeholder={titleFontFallback}
+              value={titleFontFamily}
+              onChange={(args) => setTitleFontFamily(args.value)}
+            />
+            <FormControl.Helper>{theme?.fontFamily.title.family}</FormControl.Helper>
+          </FormControl>
+          <FormControl>
+            <FormControl.Label>Body font-family</FormControl.Label>
+            <TextField
+              name="bodyFontFamily"
+              placeholder={bodyFontFallback}
+              value={bodyFontFamily}
+              onChange={(args) => setBodyFontFamily(args.value)}
+            />
+            <FormControl.Helper>{theme?.fontFamily.body.family}</FormControl.Helper>
+          </FormControl>
+          <Text variant="body-3" color="neutral-faded">
+            Syncing the theme from the code will create new variables or override existing ones in the `{themeName}`{" "}
             variable mode.
           </Text>
           <View gap={2} direction="row">

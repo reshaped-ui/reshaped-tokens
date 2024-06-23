@@ -130,16 +130,18 @@ const uploadViewportVariables = (theme: G.Theme, themeModeId: string) => {
   });
 };
 
-const uploadFontFamilyVariables = (theme: G.Theme, themeModeId: string) => {
+const uploadFontFamilyVariables = (
+  theme: G.Theme,
+  themeModeId: string,
+  fontFamily: { body: string; title: string },
+) => {
   const collection = getOrCreateCollection(THEME_COLLECTION_NAME);
 
   Object.keys(theme.fontFamily).forEach((key) => {
-    const token = theme.fontFamily[key];
-
-    // TODO: Ask which font is used in Figma
+    const tokenName = key as "title" | "body";
     const familyVariable = getOrCreateVariable(`Font/Family/${formatTokenName(key)}`, collection, "STRING");
 
-    familyVariable.setValueForMode(themeModeId, token.family.split(",")[0]);
+    familyVariable.setValueForMode(themeModeId, fontFamily[tokenName]);
     familyVariable.hiddenFromPublishing = true;
   });
 };
@@ -248,7 +250,11 @@ const uploadColorVariables = (theme: G.Theme, themeModeId: string) => {
   });
 };
 
-export const uploadJsonTheme = async (theme: G.Theme, themeName: string) => {
+export const uploadJsonTheme = async (
+  theme: G.Theme,
+  themeName: string,
+  fontFamily: { body: string; title: string },
+) => {
   cachedCollections = {};
   cachedVariabes = {};
 
@@ -268,7 +274,7 @@ export const uploadJsonTheme = async (theme: G.Theme, themeName: string) => {
   uploadRadiusVariables(theme, themeModeId);
   uploadUnitVariables(theme, themeModeId);
   uploadShadowVariables(theme, themeModeId);
-  uploadFontFamilyVariables(theme, themeModeId);
+  uploadFontFamilyVariables(theme, themeModeId, fontFamily);
   uploadFontWeightVariables(theme, themeModeId);
   uploadFontVariables(theme, themeModeId);
   uploadViewportVariables(theme, themeModeId);

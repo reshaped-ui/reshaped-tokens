@@ -1,9 +1,9 @@
 import type * as G from "types/global.js";
 import { uploadJsonTheme } from "utilities/tokens.js";
 
-export const uploadTheme = (theme: G.Theme, name: string) => {
+export const uploadTheme = (theme: G.Theme, name: string, fontFamily: { body: string; title: string }) => {
   try {
-    uploadJsonTheme(theme, name);
+    uploadJsonTheme(theme, name, fontFamily);
   } catch (e) {
     if (e instanceof Error) {
       figma.notify("Error while uploading the theme, check console for more info", { error: true });
