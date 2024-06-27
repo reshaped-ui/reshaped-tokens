@@ -12,6 +12,7 @@ import {
   TextField,
   FormControl,
   useToast,
+  Divider,
 } from "reshaped";
 import * as ThemeService from "services/theme/index.js";
 import type * as G from "types/global.js";
@@ -150,6 +151,7 @@ const App = () => {
             />
             <FormControl.Helper>{theme?.fontFamily.body.family}</FormControl.Helper>
           </FormControl>
+          <Divider />
           <Text variant="body-3" color="neutral-faded">
             Syncing the theme from the code will create new variables or override existing ones in the `{themeName}`{" "}
             variable mode.

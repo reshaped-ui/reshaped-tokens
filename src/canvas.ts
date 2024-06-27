@@ -2,7 +2,7 @@ import * as ThemeService from "services/theme/index.js";
 import * as FigmaService from "services/figma/index.js";
 import { subscribeToPlugin, receivePluginMessage } from "utilities/channel.js";
 
-figma.showUI(__html__, { height: 440, themeColors: true });
+figma.showUI(__html__, { height: 436, themeColors: true });
 
 (async () => {
   subscribeToPlugin((msg) => {
