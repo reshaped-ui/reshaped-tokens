@@ -109,6 +109,7 @@ const App = () => {
                     placeholder="Reshaped"
                     onChange={(args) => setThemeName(args.value)}
                     value={themeName}
+                    variant="faded"
                   />
                 </View.Item>
                 <Button color="primary" onClick={handleUploadClick}>

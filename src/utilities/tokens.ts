@@ -171,7 +171,7 @@ const uploadFontVariables = (theme: G.Theme, themeModeId: string) => {
     sizeVariable.hiddenFromPublishing = true;
 
     const lineHeightVariable = getOrCreateVariable(
-      `Font/Styles/${formatTokenName(key)}/Line Height`,
+      `Font/Styles/${formatTokenName(key)}/Line height`,
       collection,
       "FLOAT",
     );
