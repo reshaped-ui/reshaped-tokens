@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, MouseEvent, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, MouseEvent, useRef, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Reshaped,
@@ -16,7 +16,33 @@ import {
 } from "reshaped";
 import * as ThemeService from "services/theme/index.js";
 import type * as G from "types/global.js";
+import { subscribeToCanvas, receiveCanvasMessage } from "utilities/channel.js";
 import "reshaped/themes/figma/theme.css";
+
+export default function copyToClipboard(value: string) {
+  try {
+    // @ts-expect-error -- window.copy is not typed
+    if (window.copy) {
+      // @ts-expect-error -- window.copy is not typed
+      window.copy(value);
+    } else {
+      const area = document.createElement("textarea");
+      document.body.appendChild(area);
+      area.value = value;
+      area.focus();
+      area.select();
+      const result = document.execCommand("copy");
+      document.body.removeChild(area);
+      if (!result) {
+        throw new Error();
+      }
+    }
+  } catch (e) {
+    console.error(`Unable to copy the value: ${value}`);
+    return false;
+  }
+  return true;
+}
 
 const App = () => {
   const { setColorMode } = useTheme();
@@ -30,6 +56,9 @@ const App = () => {
   const [titleFontFamily, setTitleFontFamily] = useState("");
   const [bodyFontFamily, setBodyFontFamily] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [extractModeName, setExtractModeName] = useState("");
+  const [extractedThemeJson, setExtractedThemeJson] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const handleThemeUploadConfirm = () => {
     if (!themeJson) return;
@@ -82,6 +111,46 @@ const App = () => {
     confirmToggle.deactivate();
   };
 
+  const handleExtractTheme = (e: FormEvent | MouseEvent) => {
+    e.preventDefault();
+
+    if (!extractModeName) {
+      toast.show({ text: "Please enter a theme name 😬" });
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractedThemeJson(null);
+    ThemeService.plugin.requestExtractTheme({ modeName: extractModeName });
+  };
+
+  const handleCopyJson = () => {
+    if (!extractedThemeJson) return;
+
+    copyToClipboard(extractedThemeJson);
+    toast.show({ text: "JSON copied to clipboard! 📋" });
+  };
+
+  useEffect(() => {
+    const subscription = subscribeToCanvas((msg) => {
+      receiveCanvasMessage(msg, ThemeService.CanvasActionType.themeExtracted, (payload) => {
+        setIsExtracting(false);
+        if ("error" in payload) {
+          toast.show({ text: `Error: ${payload.error}` });
+          setExtractedThemeJson(null);
+        } else {
+          const jsonString = JSON.stringify(payload.theme, null, 2);
+          setExtractedThemeJson(jsonString);
+          toast.show({ text: "Theme extracted successfully! ✨" });
+        }
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
+
   useIsomorphicLayoutEffect(() => {
     if (!document.documentElement.classList.contains("figma-dark")) return;
     setColorMode("dark");
@@ -121,6 +190,69 @@ const App = () => {
             </FormControl>
           </form>
         </View.Item>
+      </View>
+      <View padding={4} gap={4} divided>
+        <View.Item>
+          <Text variant="body-2" weight="medium">
+            Extract theme from Figma
+          </Text>
+          <Text color="neutral-faded" variant="body-3">
+            Extract theme variables and styles from a Figma mode and convert them to JSON.
+          </Text>
+        </View.Item>
+        <View.Item>
+          <form onSubmit={handleExtractTheme}>
+            <FormControl>
+              <FormControl.Label>Theme name</FormControl.Label>
+              <View gap={2} direction="row">
+                <View.Item grow>
+                  <TextField
+                    name="extractModeName"
+                    placeholder="Light"
+                    onChange={(args) => setExtractModeName(args.value)}
+                    value={extractModeName}
+                    variant="faded"
+                  />
+                </View.Item>
+                <Button color="primary" onClick={handleExtractTheme} loading={isExtracting}>
+                  Extract
+                </Button>
+              </View>
+              <FormControl.Helper>Enter the name of the Figma variable mode to extract theme from</FormControl.Helper>
+            </FormControl>
+          </form>
+        </View.Item>
+        {extractedThemeJson && (
+          <View.Item>
+            <View gap={2}>
+              <View direction="row" align="center" justify="space-between">
+                <Text variant="body-2" weight="medium">
+                  Extracted Theme JSON
+                </Text>
+                <Button size="small" onClick={handleCopyJson}>
+                  Copy
+                </Button>
+              </View>
+              <View
+                padding={3}
+                backgroundColor="neutral-faded"
+                borderRadius="medium"
+                maxHeight="300px"
+                overflow="auto"
+                attributes={{
+                  style: {
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-all",
+                  },
+                }}
+              >
+                <Text variant="caption-1" monospace>
+                  {extractedThemeJson}
+                </Text>
+              </View>
+            </View>
+          </View.Item>
+        )}
       </View>
       <Modal active={confirmToggle.active} onClose={confirmToggle.deactivate}>
         <View gap={3}>

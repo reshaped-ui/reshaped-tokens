@@ -10,6 +10,10 @@ figma.showUI(__html__, { height: 436, themeColors: true });
       ThemeService.canvas.uploadTheme(payload.theme, payload.name, payload.fontFamily);
     });
 
+    receivePluginMessage(msg, ThemeService.PluginActionType.requestExtractTheme, (payload) => {
+      ThemeService.canvas.extractTheme(payload.modeName);
+    });
+
     receivePluginMessage(msg, FigmaService.PluginActionType.notify, ({ message }) => {
       figma.notify(message);
     });
