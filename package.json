@@ -16,15 +16,15 @@
   "author": "Dmitry Belyaev <blv.dmitry@gmail.com>",
   "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "reshaped": "3.9.0"
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "reshaped": "4.0.0-canary.6"
   },
   "devDependencies": {
-    "@figma/plugin-typings": "1.96.0",
-    "@types/node": "^20.14.8",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
+    "@figma/plugin-typings": "1.125.0",
+    "@types/node": "25.6.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.3.1",
     "concurrently": "^8.2.2",
     "eslint": "9.5.0",

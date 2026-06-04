@@ -94,6 +94,7 @@ type ThemeOutput = {
       lineHeight: { px: number };
       fontWeightToken?: string;
       fontFamilyToken?: string;
+      letterSpacing?: { px: number };
     }
   >;
   unit: Record<string, { px: number }>;
@@ -186,6 +187,11 @@ function extractFont(modeId: string): ThemeOutput["font"] {
       fontSize: { px: sizeValue },
       lineHeight: { px: lineHeightValue },
     };
+
+    const letterSpacingValue = getValue(getVariable(`Font/Styles/${formattedName}/Letter spacing`), modeId);
+    if (typeof letterSpacingValue === "number") {
+      fontToken.letterSpacing = { px: letterSpacingValue };
+    }
 
     // Check if this font has a single weight token (Font/Styles/{name}/Weight)
     // vs multiple weight variants (Font/Styles/{name}/Regular/Weight, etc.)

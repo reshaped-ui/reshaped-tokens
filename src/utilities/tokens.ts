@@ -81,9 +81,9 @@ const uploadShadowVariables = (theme: G.Theme, themeModeId: string) => {
   const collection = getOrCreateCollection(THEME_COLLECTION_NAME);
 
   Object.keys(theme.shadow).forEach((key) => {
-    const tokenArray = theme.shadow[key];
+    const tokenArray = theme.shadow[key].parts;
 
-    tokenArray.forEach((token, index) => {
+    tokenArray.forEach((token: G.Theme["shadow"][string]["parts"][number], index: number) => {
       const baseName = `Shadow/Styles/${formatTokenName(key)}/Layer ${index + 1}`;
       const colorToken = theme.color[token.colorToken];
 
@@ -138,10 +138,13 @@ const uploadFontFamilyVariables = (
   const collection = getOrCreateCollection(THEME_COLLECTION_NAME);
 
   Object.keys(theme.fontFamily).forEach((key) => {
-    const tokenName = key as "title" | "body";
+    // The plugin only collects title/body families from the user.
+    // Headline falls back to title, monospace/everything else falls back to body.
+    const resolvedFamily = key === "title" || key === "headline" ? fontFamily.title : fontFamily.body;
+
     const familyVariable = getOrCreateVariable(`Font/Family/${formatTokenName(key)}`, collection, "STRING");
 
-    familyVariable.setValueForMode(themeModeId, fontFamily[tokenName]);
+    familyVariable.setValueForMode(themeModeId, resolvedFamily);
     familyVariable.hiddenFromPublishing = true;
   });
 };
@@ -150,11 +153,11 @@ const uploadFontWeightVariables = (theme: G.Theme, themeModeId: string) => {
   const collection = getOrCreateCollection(THEME_COLLECTION_NAME);
 
   Object.keys(theme.fontWeight).forEach((key) => {
-    const token = theme.fontWeight[key];
+    const formattedWeightName = formatTokenName(key);
 
-    const weightVariable = getOrCreateVariable(`Font/Weight/${formatTokenName(key)}`, collection, "FLOAT");
+    const weightVariable = getOrCreateVariable(`Font/Weight/${formattedWeightName}`, collection, "STRING");
 
-    weightVariable.setValueForMode(themeModeId, token.weight);
+    weightVariable.setValueForMode(themeModeId, formattedWeightName);
     weightVariable.hiddenFromPublishing = true;
   });
 };
@@ -178,20 +181,31 @@ const uploadFontVariables = (theme: G.Theme, themeModeId: string) => {
 
     lineHeightVariable.setValueForMode(themeModeId, token.lineHeight.px);
 
+    const letterSpacingVariable = getOrCreateVariable(
+      `Font/Styles/${formatTokenName(key)}/Letter spacing`,
+      collection,
+      "FLOAT",
+    );
+
+    letterSpacingVariable.setValueForMode(themeModeId, token.letterSpacing?.px ?? 0);
+    letterSpacingVariable.hiddenFromPublishing = true;
+
     // Resolve font weight
     // If there is no weight token, font support 3 predefined weights
     const weights = token.fontWeightToken ? [token.fontWeightToken] : ["regular", "medium", "bold"];
 
     weights.forEach((weightName) => {
+      const resolvedWeightName = weightName === "bold" && token.fontSize.px >= 18 ? "semibold" : weightName;
       const formattedWeightName = formatTokenName(weightName);
-      const weightVariable = getOrCreateVariable(`Font/Weight/${formattedWeightName}`, collection, "FLOAT");
+      const formattedResolvedWeightName = formatTokenName(resolvedWeightName);
+      const weightVariable = getOrCreateVariable(`Font/Weight/${formattedResolvedWeightName}`, collection, "STRING");
       const alias = figma.variables.createVariableAlias(weightVariable);
       const tokenName = `Font/Styles/${formatTokenName(key)}`;
 
       const weightAliasVariable = getOrCreateVariable(
         weights.length === 1 ? `${tokenName}/Weight` : `${tokenName}/${formattedWeightName}/Weight`,
         collection,
-        "FLOAT",
+        "STRING",
       );
 
       weightAliasVariable.setValueForMode(themeModeId, alias);
@@ -203,7 +217,7 @@ const uploadFontVariables = (theme: G.Theme, themeModeId: string) => {
       const familyVariable = getOrCreateVariable(
         `Font/Family/${formatTokenName(token.fontFamilyToken)}`,
         collection,
-        "FLOAT",
+        "STRING",
       );
       const alias = figma.variables.createVariableAlias(familyVariable);
 
