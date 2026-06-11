@@ -191,26 +191,14 @@ const uploadFontVariables = (theme: G.Theme, themeModeId: string) => {
     letterSpacingVariable.hiddenFromPublishing = true;
 
     // Resolve font weight
-    // If there is no weight token, font support 3 predefined weights
-    const weights = token.fontWeightToken ? [token.fontWeightToken] : ["regular", "medium", "bold"];
+    const weightName = token.fontWeightToken ?? "regular";
+    const formattedWeightName = formatTokenName(weightName);
+    const weightVariable = getOrCreateVariable(`Font/Weight/${formattedWeightName}`, collection, "STRING");
+    const weightAliasVariable = getOrCreateVariable(`Font/Styles/${formatTokenName(key)}/Weight`, collection, "STRING");
+    const alias = figma.variables.createVariableAlias(weightVariable);
 
-    weights.forEach((weightName) => {
-      const resolvedWeightName = weightName === "bold" && token.fontSize.px >= 18 ? "semibold" : weightName;
-      const formattedWeightName = formatTokenName(weightName);
-      const formattedResolvedWeightName = formatTokenName(resolvedWeightName);
-      const weightVariable = getOrCreateVariable(`Font/Weight/${formattedResolvedWeightName}`, collection, "STRING");
-      const alias = figma.variables.createVariableAlias(weightVariable);
-      const tokenName = `Font/Styles/${formatTokenName(key)}`;
-
-      const weightAliasVariable = getOrCreateVariable(
-        weights.length === 1 ? `${tokenName}/Weight` : `${tokenName}/${formattedWeightName}/Weight`,
-        collection,
-        "STRING",
-      );
-
-      weightAliasVariable.setValueForMode(themeModeId, alias);
-      weightAliasVariable.hiddenFromPublishing = true;
-    });
+    weightAliasVariable.setValueForMode(themeModeId, alias);
+    weightAliasVariable.hiddenFromPublishing = true;
 
     // Resolve font family
     if (token.fontFamilyToken) {
