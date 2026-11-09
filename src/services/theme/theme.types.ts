@@ -7,6 +7,7 @@ export enum PluginActionType {
 
 export enum CanvasActionType {
   themeExtracted = "themeExtracted",
+  themeUploaded = "themeUploaded",
 }
 
 export type PluginActionRequestUploadTheme = G.Message<
@@ -21,5 +22,7 @@ export type CanvasActionThemeExtracted = G.Message<
   { theme: G.Theme } | { error: string }
 >;
 
+export type CanvasActionThemeUploaded = G.Message<CanvasActionType.themeUploaded, G.UploadThemeResult>;
+
 export type PluginAction = PluginActionRequestUploadTheme | PluginActionRequestExtractTheme;
-export type CanvasAction = CanvasActionThemeExtracted;
+export type CanvasAction = CanvasActionThemeExtracted | CanvasActionThemeUploaded;

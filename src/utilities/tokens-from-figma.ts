@@ -84,6 +84,15 @@ function getAliasedTokenName(value: VariableValue, pattern: RegExp): string | un
 // Token Extractors
 // =============================================================================
 
+type ShadowPart = {
+  offsetX: number;
+  offsetY: number;
+  blurRadius: number;
+  spreadRadius: number;
+  colorToken: string;
+  opacity: number;
+};
+
 type ThemeOutput = {
   fontFamily: Record<string, { family: string }>;
   fontWeight: Record<string, { weight: number }>;
@@ -100,17 +109,7 @@ type ThemeOutput = {
   unit: Record<string, { px: number }>;
   radius: Record<string, { px: number }>;
   color: Record<string, { hex: string; hexDark?: string }>;
-  shadow: Record<
-    string,
-    Array<{
-      offsetX: number;
-      offsetY: number;
-      blurRadius: number;
-      spreadRadius: number;
-      colorToken: string;
-      opacity: number;
-    }>
-  >;
+  shadow: Record<string, { parts: ShadowPart[]; dark?: { parts: ShadowPart[] } }>;
   viewport: Record<string, { minPx?: number; maxPx?: number }>;
   duration: Record<string, { ms: number }>;
   easing: Record<string, { x1: number; y1: number; x2: number; y2: number }>;
@@ -122,7 +121,7 @@ function extractFontFamily(modeId: string): ThemeOutput["fontFamily"] {
   const fallback = "BlinkMacSystemFont, -apple-system, Roboto, Helvetica, Arial, sans-serif";
   const monoFallback = "Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace";
 
-  ["Title", "Body", "Monospace"].forEach((name) => {
+  ["Headline", "Title", "Body", "Monospace"].forEach((name) => {
     const variable = getVariable(`Font/Family/${name}`);
     const value = getValue(variable, modeId);
     if (typeof value === "string") {
@@ -294,45 +293,57 @@ function extractColor(lightModeId: string, darkModeId: string): ThemeOutput["col
   return result;
 }
 
+function extractShadowLayers(baseName: string, modeId: string): ShadowPart[] {
+  const layers: ShadowPart[] = [];
+  let layerIndex = 1;
+
+  while (true) {
+    const prefix = `${baseName}/Layer ${layerIndex}`;
+    const x = getValue(getVariable(`${prefix}/X`), modeId);
+    const y = getValue(getVariable(`${prefix}/Y`), modeId);
+    const blur = getValue(getVariable(`${prefix}/Blur`), modeId);
+    const spread = getValue(getVariable(`${prefix}/Spread`), modeId);
+    const color = getValue(getVariable(`${prefix}/Color`), modeId);
+
+    if (typeof x !== "number" || typeof y !== "number") break;
+
+    const opacity = typeof color === "object" && "a" in color ? (color as RGBA).a ?? 1 : 1;
+    const isWhite = typeof color === "object" && "r" in color && (color as RGBA).r > 0.5;
+
+    layerIndex++;
+
+    // Unused layers are written as fully transparent by the uploader
+    if (opacity === 0) continue;
+
+    layers.push({
+      offsetX: x,
+      offsetY: y,
+      blurRadius: typeof blur === "number" ? blur : 0,
+      spreadRadius: typeof spread === "number" ? spread : 0,
+      colorToken: isWhite ? "white" : "black",
+      opacity,
+    });
+  }
+
+  return layers;
+}
+
 function extractShadow(modeId: string): ThemeOutput["shadow"] {
   const result: ThemeOutput["shadow"] = {};
 
-  // Find all shadow styles
+  // Find all shadow styles, dark variants live in Shadow/Styles/{name}/Dark/Layer N
   const shadowStyles = new Set<string>();
   Object.values(variablesCache).forEach((variable) => {
-    const match = variable.name.match(/^Shadow\/Styles\/(.+?)\/Layer \d+/);
+    const match = variable.name.match(/^Shadow\/Styles\/(.+?)(?:\/Dark)?\/Layer \d+/);
     if (match) shadowStyles.add(match[1]);
   });
 
   shadowStyles.forEach((styleName) => {
-    const layers: ThemeOutput["shadow"][string] = [];
-    let layerIndex = 1;
+    const parts = extractShadowLayers(`Shadow/Styles/${styleName}`, modeId);
+    if (!parts.length) return;
 
-    while (true) {
-      const prefix = `Shadow/Styles/${styleName}/Layer ${layerIndex}`;
-      const x = getValue(getVariable(`${prefix}/X`), modeId);
-      const y = getValue(getVariable(`${prefix}/Y`), modeId);
-      const blur = getValue(getVariable(`${prefix}/Blur`), modeId);
-      const spread = getValue(getVariable(`${prefix}/Spread`), modeId);
-      const color = getValue(getVariable(`${prefix}/Color`), modeId);
-
-      if (typeof x !== "number" || typeof y !== "number") break;
-
-      layers.push({
-        offsetX: x,
-        offsetY: y,
-        blurRadius: typeof blur === "number" ? blur : 0,
-        spreadRadius: typeof spread === "number" ? spread : 0,
-        colorToken: "black", // Default, could be improved
-        opacity: typeof color === "object" && "a" in color ? (color as RGBA).a ?? 1 : 1,
-      });
-
-      layerIndex++;
-    }
-
-    if (layers.length > 0) {
-      result[toCamelCase(styleName)] = layers;
-    }
+    const darkParts = extractShadowLayers(`Shadow/Styles/${styleName}/Dark`, modeId);
+    result[toCamelCase(styleName)] = darkParts.length ? { parts, dark: { parts: darkParts } } : { parts };
   });
 
   return result;
