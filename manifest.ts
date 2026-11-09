@@ -6,6 +6,7 @@ export default {
   main: "./canvas.js",
   ui: "./plugin.html",
   editorType: ["figma"],
+  documentAccess: "dynamic-page",
   networkAccess: {
     allowedDomains: ["none"],
   },

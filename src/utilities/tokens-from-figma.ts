@@ -7,6 +7,8 @@ const THEME_COLLECTION_NAME = "Theme";
 
 // Cache for variable lookups
 let variablesCache: Record<string, Variable> = {};
+// All local variables by id, used to resolve aliases synchronously
+let variablesById = new Map<string, Variable>();
 
 /**
  * Initialize variables cache for faster lookups
@@ -71,7 +73,7 @@ function toCamelCase(formatted: string): string {
  */
 function getAliasedTokenName(value: VariableValue, pattern: RegExp): string | undefined {
   if (typeof value === "object" && "type" in value && value.type === "VARIABLE_ALIAS") {
-    const aliasedVar = figma.variables.getVariableById(value.id);
+    const aliasedVar = variablesById.get(value.id);
     if (aliasedVar) {
       const match = aliasedVar.name.match(pattern);
       if (match) return toCamelCase(match[1]);
@@ -353,22 +355,18 @@ function extractShadow(modeId: string): ThemeOutput["shadow"] {
 // Main Export
 // =============================================================================
 
-export function extractThemeFromFigma(modeName: string): Partial<ThemeOutput> {
-  const collection = figma.variables.getLocalVariableCollections().find((c) => c.name === THEME_COLLECTION_NAME);
+export async function extractThemeFromFigma(modeName: string): Promise<Partial<ThemeOutput>> {
+  const collections = await figma.variables.getLocalVariableCollectionsAsync();
+  const collection = collections.find((c) => c.name === THEME_COLLECTION_NAME);
   if (!collection) throw new Error(`Collection "${THEME_COLLECTION_NAME}" not found`);
 
   const mode = collection.modes.find((m) => m.name === modeName);
   if (!mode) throw new Error(`Mode "${modeName}" not found`);
 
-  // Get all variables in this collection
-  const allVariables = figma.variables.getLocalVariables().filter((v) => {
-    const varCollection = v.variableCollectionId
-      ? figma.variables.getVariableCollectionById(v.variableCollectionId)
-      : null;
-    return varCollection?.id === collection.id;
-  });
+  const localVariables = await figma.variables.getLocalVariablesAsync();
 
-  initCache(allVariables);
+  variablesById = new Map(localVariables.map((v) => [v.id, v]));
+  initCache(localVariables.filter((v) => v.variableCollectionId === collection.id));
 
   // Find light/dark modes for colors
   const lightMode = collection.modes.find((m) => m.name.toLowerCase().includes("light")) || mode;

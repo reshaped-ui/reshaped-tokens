@@ -25,9 +25,9 @@ export const uploadTheme = async (theme: G.Theme, name: string, fontFamily: { bo
   }
 };
 
-export const extractTheme = (modeName: string) => {
+export const extractTheme = async (modeName: string) => {
   try {
-    const theme = extractThemeFromFigma(modeName);
+    const theme = await extractThemeFromFigma(modeName);
     // Cast to G.Theme for type compatibility, but it's actually ThemeDefinition structure
     sendCanvasMessage({
       type: T.CanvasActionType.themeExtracted,
